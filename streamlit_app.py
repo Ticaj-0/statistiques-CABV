@@ -13,7 +13,7 @@ logo_placeholder = st.empty()
 with logo_placeholder.container():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.image("logo_CABV2.png", width=500)
+        st.image("LogoCABV.png", width=500)
 
 # ============================================================
 # 0) Fichiers / cache (Parquet direct)
@@ -499,7 +499,7 @@ logo_placeholder.empty()
 # ============================================================
 col_logo, col_title = st.columns([1, 5])
 with col_logo:
-    st.image("logo_CABV2.png", width=170)
+    st.image("LogoCABV.png", width=170)
 
 # ============================================================
 # 5) Interface
@@ -1008,3 +1008,4 @@ if st.button("Rechercher"):
 
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
+
