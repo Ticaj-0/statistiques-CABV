@@ -852,7 +852,117 @@ if st.button("Rechercher"):
                 return '<span style="color: #aaa;">None</span>' if with_none else ""
             return str(val)
         
-        # ---- Construire le tableau HTML ----
+        # ---- CSS (table + tooltip hover PC / tap mobile) ----
+        st.markdown("""
+        <style>
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 14px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        thead {
+            background-color: #f8f9fb;
+            color: #000000;
+        }
+        @media (prefers-color-scheme: dark) {
+            thead {
+                background-color: #1a1c24 !important;
+                color: #ffffff !important;
+            }
+        }
+        th {
+            padding: 8px 10px;
+            text-align: left;
+            font-weight: 600;
+            color: #9f9b9a;
+        }
+        td {
+            padding: 6px 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        /* ===== Tooltip compatible desktop + mobile (sans JS) ===== */
+        .info-wrap {
+            position: relative;
+            display: inline-block;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+        
+        .info-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 999px;
+            border: 1px solid rgba(0,0,0,0.15);
+            background: rgba(255,255,255,0.8);
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            padding: 0;
+            line-height: 1;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            .info-btn {
+                border: 1px solid rgba(255,255,255,0.25);
+                background: rgba(0,0,0,0.2);
+                color: #fff;
+            }
+        }
+        
+        .info-btn:focus {
+            outline: 2px solid rgba(31,119,180,0.6);
+            outline-offset: 2px;
+        }
+        
+        /* Bulle */
+        .info-pop {
+            display: none;
+            position: absolute;
+            z-index: 9999;
+            top: 110%;
+            left: 0;
+            min-width: 220px;
+            max-width: min(320px, 85vw);
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #111;
+            border: 1px solid rgba(0,0,0,0.15);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+            white-space: normal;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            .info-pop {
+                background: #151823;
+                color: #fff;
+                border: 1px solid rgba(255,255,255,0.18);
+            }
+        }
+        
+        /* Desktop souris */
+        @media (any-hover: hover) {
+            .info-wrap:hover .info-pop {
+                display: block;
+            }
+        }
+        
+        /* Mobile + clavier : tap = focus */
+        .info-wrap:focus-within .info-pop {
+            display: block;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # ---- Construire le tableau HTML (comme avant) ----
         table_html = "<table><thead><tr>"
         headers = ["", "Prénom Nom", "Naissance", "Performance", "Lieu", "Date", "Cat.", "Record"]
         for col in headers:
@@ -870,10 +980,15 @@ if st.button("Rechercher"):
         
             if details_txt_safe:
                 icon = f"""
-                <details class="details-tip">
-                  <summary aria-label="Voir les détails">&#9432;</summary>
-                  <div class="details-box">{details_txt_safe}</div>
-                </details>
+                <span class="info-wrap">
+                    <button class="info-btn"
+                            type="button"
+                            aria-label="Voir les détails"
+                            onpointerdown="this.focus();">
+                        &#9432;
+                    </button>
+                    <span class="info-pop" role="tooltip">{details_txt_safe}</span>
+                </span>
                 """
                 perf_html = f"{format_cell(row['Performance'])}{icon}"
             else:
@@ -887,139 +1002,7 @@ if st.button("Rechercher"):
             table_html += "</tr>"
         
         table_html += "</tbody></table>"
-        
-        # Hauteur approx (à ajuster si besoin)
-        height = min(900, 140 + len(filtre_affichage) * 34)
-        
-        # ---- Rendre TOUT (CSS + tableau + JS) dans la même iframe ----
-        components.html(f"""
-        <style>
-        table {{
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            font-size: 14px;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }}
-        thead {{
-            background-color: #f8f9fb;
-            color: #000000;
-        }}
-        th {{
-            padding: 8px 10px;
-            text-align: left;
-            font-weight: 600;
-            color: #9f9b9a;
-        }}
-        td {{
-            padding: 6px 10px;
-            border-bottom: 1px solid #ddd;
-        }}
-        
-        @media (prefers-color-scheme: dark) {{
-            thead {{
-                background-color: #1a1c24 !important;
-                color: #ffffff !important;
-            }}
-        }}
-        
-        /* Tooltip hover PC + tap mobile via <details> */
-        .details-tip {{
-            display: inline-block;
-            position: relative;
-            margin-left: 6px;
-            vertical-align: middle;
-        }}
-        
-        .details-tip > summary {{
-            list-style: none;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 22px;
-            height: 22px;
-            border-radius: 999px;
-            border: 1px solid rgba(0,0,0,0.15);
-            background: rgba(255,255,255,0.8);
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-        }}
-        .details-tip > summary::-webkit-details-marker {{ display: none; }}
-        
-        @media (prefers-color-scheme: dark) {{
-            .details-tip > summary {{
-                border: 1px solid rgba(255,255,255,0.25);
-                background: rgba(0,0,0,0.2);
-            }}
-        }}
-        
-        .details-box {{
-            display: none;
-            position: absolute;
-            z-index: 9999;
-            top: 110%;
-            left: 0;
-            min-width: 220px;
-            max-width: min(320px, 85vw);
-            padding: 10px 12px;
-            border-radius: 10px;
-            background: #ffffff;
-            color: #111;
-            border: 1px solid rgba(0,0,0,0.15);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.18);
-            white-space: normal;
-        }}
-        @media (prefers-color-scheme: dark) {{
-            .details-box {{
-                background: #151823;
-                color: #fff;
-                border: 1px solid rgba(255,255,255,0.18);
-            }}
-        }}
-        
-        /* tap/clic => open */
-        .details-tip[open] .details-box {{ display: block; }}
-        
-        /* hover PC => affiche sans open */
-        @media (any-hover: hover) {{
-            .details-tip:hover .details-box {{ display: block; }}
-        }}
-        
-        /* focus clavier */
-        .details-tip:focus-within .details-box {{ display: block; }}
-        </style>
-        
-        {table_html}
-        
-        <script>
-        (function () {{
-          // Un seul ouvert à la fois + fermer ailleurs (dans CETTE iframe)
-          function closeAll(exceptEl) {{
-            document.querySelectorAll('details.details-tip[open]').forEach(d => {{
-              if (!exceptEl || d !== exceptEl) d.removeAttribute('open');
-            }});
-          }}
-        
-          document.addEventListener('toggle', function (e) {{
-            const d = e.target;
-            if (!d || !d.matches || !d.matches('details.details-tip')) return;
-            if (d.open) closeAll(d);
-          }}, true);
-        
-          document.addEventListener('pointerdown', function (e) {{
-            const inside = e.target.closest && e.target.closest('details.details-tip');
-            if (!inside) closeAll(null);
-          }}, true);
-        
-          document.addEventListener('keydown', function (e) {{
-            if (e.key === 'Escape') closeAll(null);
-          }}, true);
-        }})();
-        </script>
-        """, height=height, scrolling=True)
+        st.markdown(table_html, unsafe_allow_html=True)
         
     else:
         df_filtre["record"] = df_filtre["record"].fillna("")
@@ -1110,6 +1093,7 @@ if st.button("Rechercher"):
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
         
+
 
 
 
