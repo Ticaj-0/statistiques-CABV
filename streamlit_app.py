@@ -861,9 +861,20 @@ if st.button("Rechercher"):
             border-spacing: 0;
             font-size: 14px;
             border-radius: 10px;
-            overflow: hidden;
+            overflow: visible;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
+        tbody, tr, td {
+            overflow: visible !important;
+        }
+        td { position: relative; } /* ancrage propre des tooltips */
+        
+        /* ✅ garder l’effet arrondi sans overflow:hidden */
+        thead th:first-child { border-top-left-radius: 10px; }
+        thead th:last-child  { border-top-right-radius: 10px; }
+        tbody tr:last-child td:first-child { border-bottom-left-radius: 10px; }
+        tbody tr:last-child td:last-child  { border-bottom-right-radius: 10px; }
+        
         thead {
             background-color: #f8f9fb;
             color: #000000;
@@ -1119,6 +1130,7 @@ if st.button("Rechercher"):
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
         
+
 
 
 
