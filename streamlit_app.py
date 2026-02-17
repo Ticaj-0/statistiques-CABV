@@ -975,11 +975,10 @@ if st.button("Rechercher"):
         /* 📱 Mobile : wrap seulement si nécessaire */
         @media (max-width: 768px) {
             .info-pop {
-                white-space: normal;
-                width: max-content;
+                white-space: normal;          /* autorise le retour */
+                word-break: keep-all;         /* interdit la coupure des mots */
+                overflow-wrap: normal;        /* pas de wrap arbitraire */
                 max-width: calc(100vw - 16px);
-                overflow-wrap: break-word;
-                word-break: normal;
             }
         }
         </style>
@@ -1116,6 +1115,7 @@ if st.button("Rechercher"):
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
         
+
 
 
 
