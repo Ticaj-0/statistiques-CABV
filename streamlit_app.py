@@ -928,18 +928,42 @@ if st.button("Rechercher"):
             position: absolute;
             z-index: 9999;
             top: 110%;
+        
+            /* 👉 placement intelligent */
             left: 0;
-            min-width: 220px;
-            max-width: min(320px, 85vw);
-            padding: 10px 12px;
+            transform: translateX(0);
+        
+            /* 👉 une seule ligne */
+            white-space: nowrap;
+        
+            /* 👉 rester dans l’écran */
+            max-width: calc(100vw - 24px);
+            overflow: hidden;
+            text-overflow: ellipsis;
+        
+            padding: 8px 10px;
             border-radius: 10px;
             background: #ffffff;
             color: #111;
             border: 1px solid rgba(0,0,0,0.15);
             box-shadow: 0 10px 30px rgba(0,0,0,0.18);
-            white-space: normal;
         }
         
+        /* Mode sombre */
+        @media (prefers-color-scheme: dark) {
+            .info-pop {
+                background: #151823;
+                color: #fff;
+                border: 1px solid rgba(255,255,255,0.18);
+            }
+        }
+        /* Si on est trop proche du bord droit, on aligne à droite */
+        .info-wrap:hover .info-pop,
+        .info-wrap:focus-within .info-pop {
+            right: 0;
+            left: auto;
+        }
+
         @media (prefers-color-scheme: dark) {
             .info-pop {
                 background: #151823;
@@ -1097,6 +1121,7 @@ if st.button("Rechercher"):
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
         
+
 
 
 
