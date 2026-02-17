@@ -938,9 +938,16 @@ if st.button("Rechercher"):
         /* Mobile/tactile: ouvert => visible */
         .details-tip[open] .details-box { display: block; }
         
-        /* Desktop souris: survol => visible */
-        @media (hover: hover) and (pointer: fine) {
-            .details-tip:hover .details-box { display: block; }
+        /* Desktop / appareils avec hover : afficher au survol ET au focus clavier */
+        @media (any-hover: hover) {
+            .details-tip:hover .details-box { 
+                display: block; 
+            }
+        }
+        
+        /* Bonus accessibilité: si on focus le summary (tab), on affiche aussi */
+        .details-tip:focus-within .details-box {
+            display: block;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -995,26 +1002,26 @@ if st.button("Rechercher"):
           if (window.__cabv_details_tip_init__) return;
           window.__cabv_details_tip_init__ = true;
         
-          const hasHover = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-          if (hasHover) return;
-        
           function closeAll(exceptEl) {
             document.querySelectorAll('details.details-tip[open]').forEach(d => {
               if (!exceptEl || d !== exceptEl) d.removeAttribute('open');
             });
           }
         
+          // Un seul "open" à la fois (tous appareils)
           document.addEventListener('toggle', function (e) {
             const d = e.target;
             if (!d || !d.matches || !d.matches('details.details-tip')) return;
             if (d.open) closeAll(d);
           }, true);
         
+          // Clic/tap ailleurs => fermer tout
           document.addEventListener('pointerdown', function (e) {
             const inside = e.target.closest && e.target.closest('details.details-tip');
             if (!inside) closeAll(null);
           }, true);
         
+          // ESC => fermer tout
           document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') closeAll(null);
           }, true);
@@ -1111,5 +1118,6 @@ if st.button("Rechercher"):
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
         
+
 
 
