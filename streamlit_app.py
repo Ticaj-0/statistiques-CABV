@@ -525,9 +525,8 @@ if categorie_base in ["Homme", "Femme"]:
     categories_autorisees_full.append(sexe_sel)
 
 discipline_list = get_discipline_list(df, type_salle, categories_autorisees_full)
-discipline = st.selectbox("Choisir une discipline", discipline_list)
+discipline = st.selectbox("Choisir une discipline",discipline_list)
 mode = st.selectbox("Afficher", ["Un seul résultat par athlète", "Tous les résultats"])
-
 
 # ============================================================
 # 6) Recherche & affichage (tout comme avant + optimisé)
@@ -877,68 +876,10 @@ if st.button("Rechercher"):
             padding: 6px 10px;
             border-bottom: 1px solid #ddd;
         }
-        .info-icon{
-          position: relative;
-          display: inline-block;
-          margin-left: 6px;
-          user-select: none;
-          -webkit-tap-highlight-color: transparent;
-        }
-        
-        .info-icon::after{
-          content: attr(data-tooltip);
-          position: absolute;
-          left: 50%;
-          transform: translateX(-50%);
-          bottom: 140%;
-          min-width: 180px;
-          max-width: 260px;
-          white-space: normal;
-          padding: 8px 10px;
-          border-radius: 10px;
-          background: rgba(20,20,20,0.95);
-          color: #fff;
-          font-size: 12px;
-          line-height: 1.25;
-          opacity: 0;
-          pointer-events: none;
-          z-index: 9999;
-        }
-        
-        .info-icon::before{
-          content: "";
-          position: absolute;
-          left: 50%;
-          transform: translateX(-50%);
-          bottom: 118%;
-          border: 7px solid transparent;
-          border-top-color: rgba(20,20,20,0.95);
-          opacity: 0;
-          z-index: 9999;
-        }
-        
-        .info-icon:focus::after,
-        .info-icon:focus::before,
-        .info-icon:active::after,
-        .info-icon:active::before{ opacity: 1; }
-        
-        @media (hover:hover){
-          .info-icon:hover::after,
-          .info-icon:hover::before{ opacity: 1; }
-        }
-        
-        /* Mobile: cacher colonnes desktop */
-        @media (max-width: 768px) {
-          .col-naissance,
-          .col-lieu,
-          .col-date {
-              display: none;
-          }
-        
-          .col-nom,
-          .col-performance {
-              white-space: nowrap;
-          }
+        td span[title] {
+            cursor: help;
+            color: #1f77b4;
+            margin-left: 5px;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -954,47 +895,27 @@ if st.button("Rechercher"):
             html += f"<th>{col}</th>"
         html += "</tr></thead><tbody>"
 
-        def info_icon(text: str) -> str:
-            if not text or str(text).strip() == "":
-                return ""
-            safe = (str(text)
-                    .replace("&", "&amp;")
-                    .replace("<", "&lt;")
-                    .replace(">", "&gt;")
-                    .replace('"', "&quot;"))
-            return f'<span class="info-icon" tabindex="0" role="button" aria-label="Infos" data-tooltip="{safe}">ℹ️</span>'
-
         for _, row in filtre_affichage.iterrows():
             html += "<tr>"
             html += f"<td>{int(row['rang'])}</td>"
-        
-            # Nom + naissance (mobile)
-            nom_html = format_cell(row['Prénom Nom']) + info_icon(row['Naissance'])
-            html += f"<td class='col-nom'>{nom_html}</td>"
-        
-            # Naissance (desktop uniquement)
-            html += f"<td class='col-naissance'>{format_cell(row['Naissance'], with_none=True)}</td>"
-        
-            # Performance + détails + lieu/date (mobile)
+
+            html += f"<td>{format_cell(row['Prénom Nom'])}</td>"
+            html += f"<td>{format_cell(row['Naissance'], with_none=True)}</td>"
+
             details_txt = str(row["Détails"]).replace("\n", " ") if pd.notnull(row["Détails"]) else ""
-            lieu_date = " | ".join(
-                x for x in [row["Lieu"], row["Date"]] if x and str(x).strip()
-            )
-        
-            tooltip_perf = " • ".join(
-                x for x in [details_txt, lieu_date] if x
-            )
-        
-            perf_html = format_cell(row["Performance"]) + info_icon(tooltip_perf)
-            html += f"<td class='col-performance'>{perf_html}</td>"
-        
-            # Colonnes desktop
-            html += f"<td class='col-lieu'>{format_cell(row['Lieu'], with_none=True)}</td>"
-            html += f"<td class='col-date'>{format_cell(row['Date'], with_none=True)}</td>"
-        
+            if details_txt.strip():
+                icon = f'<span title="{details_txt}">&#9432;</span>'
+                perf_html = f"{format_cell(row['Performance'])}{icon}"
+            else:
+                perf_html = format_cell(row["Performance"])
+            html += f"<td>{perf_html}</td>"
+
+            html += f"<td>{format_cell(row['Lieu'], with_none=True)}</td>"
+            html += f"<td>{format_cell(row['Date'], with_none=True)}</td>"
             html += f"<td>{format_cell(row['Cat.'])}</td>"
             html += f"<td>{format_cell(row['Record'])}</td>"
             html += "</tr>"
+
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
 
@@ -1057,85 +978,6 @@ if st.button("Rechercher"):
                 background-color: #1b1d26;
             }
         }
-        .info-icon {
-            margin-left: 6px;
-            cursor: help;
-            font-size: 0.9em;
-        }
-        
-        /* Mobile */
-        @media (max-width: 768px) {
-            .col-naissance,
-            .col-lieu,
-            .col-date {
-                display: none;
-            }
-        
-            .col-nom,
-            .col-performance {
-                white-space: nowrap;
-            }
-        }
-        .info-icon{
-          position: relative;
-          display: inline-block;
-        }
-        
-        .info-icon::after{
-          content: attr(data-tooltip);
-          position: absolute;
-          left: 50%;
-          transform: translateX(-50%) translateY(4px);
-          bottom: 140%;
-          min-width: 180px;
-          max-width: 260px;
-          white-space: normal;
-          padding: 8px 10px;
-          border-radius: 10px;
-          background: rgba(20,20,20,0.95);
-          color: #fff;
-          font-size: 12px;
-          line-height: 1.25;
-        
-          box-shadow: 0 8px 18px rgba(0,0,0,0.25);
-          opacity: 0;
-          pointer-events: none;
-          transition:
-            opacity 0.12s ease,
-            transform 0.12s ease;
-        
-          z-index: 9999;
-        }
-        .info-icon::before{
-          content: "";
-          position: absolute;
-          left: 50%;
-          transform: translateX(-50%) translateY(4px);
-          bottom: 118%;
-          border: 7px solid transparent;
-          border-top-color: rgba(20,20,20,0.95);
-        
-          opacity: 0;
-          transition:
-            opacity 0.12s ease,
-            transform 0.12s ease;
-        
-          z-index: 9999;
-        }
-
-        .info-icon:focus::after,
-        .info-icon:focus::before,
-        .info-icon:active::after,
-        .info-icon:active::before{
-          opacity: 1;
-          transform: translateX(-50%) translateY(0);
-        }
-   
-        /* Hover desktop (optionnel mais sympa) */
-        @media (hover:hover){
-          .info-icon:hover::after,
-          .info-icon:hover::before{ opacity: 1; }
-        }
         </style>
         """, unsafe_allow_html=True)
 
@@ -1143,15 +985,6 @@ if st.button("Rechercher"):
             if pd.isna(val) or str(val).strip() == "":
                 return '<span style="color: #aaa;">None</span>' if with_none else ""
             return str(val)
-        def info_icon(text: str) -> str:
-            if not text or str(text).strip() == "":
-                return ""
-            safe = (str(text)
-                    .replace("&", "&amp;")
-                    .replace("<", "&lt;")
-                    .replace(">", "&gt;")
-                    .replace('"', "&quot;"))
-            return f'<span class="info-icon" tabindex="0" role="button" aria-label="Infos" data-tooltip="{safe}">ℹ️</span>'
 
         html = "<table><thead><tr>"
         headers = ["", "Prénom Nom", "Naissance", "Performance", "Lieu", "Date", "Cat.", "Record"]
@@ -1163,23 +996,11 @@ if st.button("Rechercher"):
             classe_tr = "saison-verte" if row["Année"] == ANNEE_SAISON else ""
             html += f'<tr class="{classe_tr}">'
             html += f"<td>{int(row['rang'])}</td>"
-        
-            # Nom + naissance (tooltip)
-            nom_html = format_cell(row["Prénom Nom"]) + info_icon(row["Naissance"])
-            html += f"<td class='col-nom'>{nom_html}</td>"
-        
-            # Naissance (desktop)
-            html += f"<td class='col-naissance'>{format_cell(row['Naissance'], with_none=True)}</td>"
-        
-            # Performance + lieu/date (tooltip)
-            lieu_date = " | ".join(x for x in [row["Lieu"], row["Date"]] if x and str(x).strip())
-            perf_html = format_cell(row["Performance"]) + info_icon(lieu_date)
-            html += f"<td class='col-performance'>{perf_html}</td>"
-        
-            # Desktop
-            html += f"<td class='col-lieu'>{format_cell(row['Lieu'], with_none=True)}</td>"
-            html += f"<td class='col-date'>{format_cell(row['Date'], with_none=True)}</td>"
-        
+            html += f"<td>{format_cell(row['Prénom Nom'])}</td>"
+            html += f"<td>{format_cell(row['Naissance'], with_none=True)}</td>"
+            html += f"<td>{format_cell(row['Performance'])}</td>"
+            html += f"<td>{format_cell(row['Lieu'], with_none=True)}</td>"
+            html += f"<td>{format_cell(row['Date'], with_none=True)}</td>"
             html += f"<td>{format_cell(row['Cat.'])}</td>"
             html += f"<td>{format_cell(row['Record'])}</td>"
             html += "</tr>"
