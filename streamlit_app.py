@@ -3,6 +3,7 @@ import re
 import streamlit as st
 import pandas as pd
 import html as html_lib
+import streamlit.components.v1 as components
 
 ANNEE_SAISON = 2025
 
@@ -845,7 +846,7 @@ if st.button("Rechercher"):
         details = details_disciplines_multiples.get(discipline, "")
         titre = f"{discipline} <span style='color:gray; font-size:0.9em;'>({details})</span>"
         st.markdown(titre, unsafe_allow_html=True)
-
+        
         st.markdown("""
         <style>
         table {
@@ -877,8 +878,8 @@ if st.button("Rechercher"):
             padding: 6px 10px;
             border-bottom: 1px solid #ddd;
         }
-
-        /* --- Tooltip cliquable (mobile) via <details>/<summary> --- */
+        
+        /* --- Tooltip: hover desktop + tap mobile via <details>/<summary> --- */
         .details-tip {
             display: inline-block;
             position: relative;
@@ -900,10 +901,7 @@ if st.button("Rechercher"):
             -webkit-tap-highlight-color: transparent;
             user-select: none;
         }
-        
-        .details-tip > summary::-webkit-details-marker {
-            display: none;
-        }
+        .details-tip > summary::-webkit-details-marker { display: none; }
         
         @media (prefers-color-scheme: dark) {
             .details-tip > summary {
@@ -912,11 +910,7 @@ if st.button("Rechercher"):
             }
         }
         
-        /* La bulle */
-        .details-tip[open] .details-box {
-            display: block;
-        }
-        
+        /* Bulle */
         .details-box {
             display: none;
             position: absolute;
@@ -933,7 +927,6 @@ if st.button("Rechercher"):
             box-shadow: 0 10px 30px rgba(0,0,0,0.18);
             white-space: normal;
         }
-        
         @media (prefers-color-scheme: dark) {
             .details-box {
                 background: #151823;
@@ -941,52 +934,93 @@ if st.button("Rechercher"):
                 border: 1px solid rgba(255,255,255,0.18);
             }
         }
+        
+        /* Mobile/tactile: ouvert => visible */
+        .details-tip[open] .details-box { display: block; }
+        
+        /* Desktop souris: survol => visible */
+        @media (hover: hover) and (pointer: fine) {
+            .details-tip:hover .details-box { display: block; }
+        }
         </style>
         """, unsafe_allow_html=True)
-
+        
         def format_cell(val, with_none=False):
             if pd.isna(val) or str(val).strip() == "":
                 return '<span style="color: #aaa;">None</span>' if with_none else ""
             return str(val)
-
+        
         html = "<table><thead><tr>"
         headers = ["", "Prénom Nom", "Naissance", "Performance", "Lieu", "Date", "Cat.", "Record"]
         for col in headers:
             html += f"<th>{col}</th>"
         html += "</tr></thead><tbody>"
-
-        for _, row in filtre_affichage.iterrows():
+        
+        for i, (_, row) in enumerate(filtre_affichage.iterrows()):
             html += "<tr>"
             html += f"<td>{int(row['rang'])}</td>"
-
+        
             html += f"<td>{format_cell(row['Prénom Nom'])}</td>"
             html += f"<td>{format_cell(row['Naissance'], with_none=True)}</td>"
-            
+        
             details_txt = str(row["Détails"]).replace("\n", " ") if pd.notnull(row["Détails"]) else ""
-            details_txt = details_txt.strip()
-            details_txt_safe = html_lib.escape(details_txt, quote=True)
-            
+            details_txt_safe = html_lib.escape(details_txt.strip(), quote=True)
+        
             if details_txt_safe:
                 icon = f"""
-                <details class="details-tip">
-                    <summary aria-label="Voir les détails">&#9432;</summary>
-                    <div class="details-box">{details_txt_safe}</div>
-                </details>
-                """
+        <details class="details-tip">
+          <summary aria-label="Voir les détails">&#9432;</summary>
+          <div class="details-box">{details_txt_safe}</div>
+        </details>
+        """
                 perf_html = f"{format_cell(row['Performance'])}{icon}"
             else:
                 perf_html = format_cell(row["Performance"])
-            
+        
             html += f"<td>{perf_html}</td>"
-
+        
             html += f"<td>{format_cell(row['Lieu'], with_none=True)}</td>"
             html += f"<td>{format_cell(row['Date'], with_none=True)}</td>"
             html += f"<td>{format_cell(row['Cat.'])}</td>"
             html += f"<td>{format_cell(row['Record'])}</td>"
             html += "</tr>"
-
+        
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
+        
+        # JS: uniquement pour mobile/tactile -> un seul ouvert + fermer en tapant ailleurs
+        components.html("""
+        <script>
+        (function () {
+          if (window.__cabv_details_tip_init__) return;
+          window.__cabv_details_tip_init__ = true;
+        
+          const hasHover = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+          if (hasHover) return;
+        
+          function closeAll(exceptEl) {
+            document.querySelectorAll('details.details-tip[open]').forEach(d => {
+              if (!exceptEl || d !== exceptEl) d.removeAttribute('open');
+            });
+          }
+        
+          document.addEventListener('toggle', function (e) {
+            const d = e.target;
+            if (!d || !d.matches || !d.matches('details.details-tip')) return;
+            if (d.open) closeAll(d);
+          }, true);
+        
+          document.addEventListener('pointerdown', function (e) {
+            const inside = e.target.closest && e.target.closest('details.details-tip');
+            if (!inside) closeAll(null);
+          }, true);
+        
+          document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeAll(null);
+          }, true);
+        })();
+        </script>
+        """, height=0)
 
     else:
         df_filtre["record"] = df_filtre["record"].fillna("")
@@ -1077,4 +1111,5 @@ if st.button("Rechercher"):
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
         
+
 
