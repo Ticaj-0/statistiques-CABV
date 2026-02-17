@@ -896,29 +896,43 @@ if st.button("Rechercher"):
             html += f"<th>{col}</th>"
         html += "</tr></thead><tbody>"
 
+        def info_icon(text: str) -> str:
+            if not text or str(text).strip() == "":
+                return ""
+            safe = str(text).replace('"', "&quot;")
+            return f'<span class="info-icon" title="{safe}">ℹ️</span>'
+
         for _, row in filtre_affichage.iterrows():
             html += "<tr>"
             html += f"<td>{int(row['rang'])}</td>"
-
-            html += f"<td>{format_cell(row['Prénom Nom'])}</td>"
-            html += f"<td>{format_cell(row['Naissance'], with_none=True)}</td>"
-
+        
+            # Nom + naissance (mobile)
+            nom_html = format_cell(row['Prénom Nom']) + info_icon(row['Naissance'])
+            html += f"<td class='col-nom'>{nom_html}</td>"
+        
+            # Naissance (desktop uniquement)
+            html += f"<td class='col-naissance'>{format_cell(row['Naissance'], with_none=True)}</td>"
+        
+            # Performance + détails + lieu/date (mobile)
             details_txt = str(row["Détails"]).replace("\n", " ") if pd.notnull(row["Détails"]) else ""
-            if details_txt.strip():
-                icon = f'<span title="{details_txt}">&#9432;</span>'
-                perf_html = f"{format_cell(row['Performance'])}{icon}"
-            else:
-                perf_html = format_cell(row["Performance"])
-            html += f"<td>{perf_html}</td>"
-
-            html += f"<td>{format_cell(row['Lieu'], with_none=True)}</td>"
-            html += f"<td>{format_cell(row['Date'], with_none=True)}</td>"
+            lieu_date = " | ".join(
+                x for x in [row["Lieu"], row["Date"]] if x and str(x).strip()
+            )
+        
+            tooltip_perf = " • ".join(
+                x for x in [details_txt, lieu_date] if x
+            )
+        
+            perf_html = format_cell(row["Performance"]) + info_icon(tooltip_perf)
+            html += f"<td class='col-performance'>{perf_html}</td>"
+        
+            # Colonnes desktop
+            html += f"<td class='col-lieu'>{format_cell(row['Lieu'], with_none=True)}</td>"
+            html += f"<td class='col-date'>{format_cell(row['Date'], with_none=True)}</td>"
+        
             html += f"<td>{format_cell(row['Cat.'])}</td>"
             html += f"<td>{format_cell(row['Record'])}</td>"
             html += "</tr>"
-
-        html += "</tbody></table>"
-        st.markdown(html, unsafe_allow_html=True)
 
     else:
         df_filtre["record"] = df_filtre["record"].fillna("")
@@ -979,6 +993,25 @@ if st.button("Rechercher"):
                 background-color: #1b1d26;
             }
         }
+        .info-icon {
+            margin-left: 6px;
+            cursor: help;
+            font-size: 0.9em;
+        }
+        
+        /* Mobile */
+        @media (max-width: 768px) {
+            .col-naissance,
+            .col-lieu,
+            .col-date {
+                display: none;
+            }
+        
+            .col-nom,
+            .col-performance {
+                white-space: nowrap;
+            }
+        }
         </style>
         """, unsafe_allow_html=True)
 
@@ -1008,4 +1041,5 @@ if st.button("Rechercher"):
 
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
+
 
