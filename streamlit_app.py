@@ -929,17 +929,14 @@ if st.button("Rechercher"):
             z-index: 9999;
             top: 110%;
         
-            /* 👉 placement intelligent */
+            /* Position de base */
             left: 0;
-            transform: translateX(0);
         
-            /* 👉 une seule ligne */
+            /* 1 seule ligne */
             white-space: nowrap;
         
-            /* 👉 rester dans l’écran */
-            max-width: calc(100vw - 24px);
-            overflow: hidden;
-            text-overflow: ellipsis;
+            /* Rester dans l'écran */
+            max-width: calc(100vw - 16px);
         
             padding: 8px 10px;
             border-radius: 10px;
@@ -948,7 +945,14 @@ if st.button("Rechercher"):
             border: 1px solid rgba(0,0,0,0.15);
             box-shadow: 0 10px 30px rgba(0,0,0,0.18);
         }
-        
+        /* Empêcher de sortir de l'écran à droite : on décale légèrement */
+        .info-wrap:hover .info-pop,
+        .info-wrap:focus-within .info-pop {
+            transform: translateX(
+                min(0px, calc(100vw - 16px - 100%))
+            );
+        }
+
         /* Mode sombre */
         @media (prefers-color-scheme: dark) {
             .info-pop {
@@ -1115,6 +1119,7 @@ if st.button("Rechercher"):
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
         
+
 
 
 
