@@ -847,9 +847,54 @@ if st.button("Rechercher"):
         titre = f"{discipline} <span style='color:gray; font-size:0.9em;'>({details})</span>"
         st.markdown(titre, unsafe_allow_html=True)
         
-        st.markdown("""
+        def format_cell(val, with_none=False):
+            if pd.isna(val) or str(val).strip() == "":
+                return '<span style="color: #aaa;">None</span>' if with_none else ""
+            return str(val)
+        
+        # ---- Construire le tableau HTML ----
+        table_html = "<table><thead><tr>"
+        headers = ["", "Prénom Nom", "Naissance", "Performance", "Lieu", "Date", "Cat.", "Record"]
+        for col in headers:
+            table_html += f"<th>{col}</th>"
+        table_html += "</tr></thead><tbody>"
+        
+        for i, (_, row) in enumerate(filtre_affichage.iterrows()):
+            table_html += "<tr>"
+            table_html += f"<td>{int(row['rang'])}</td>"
+            table_html += f"<td>{format_cell(row['Prénom Nom'])}</td>"
+            table_html += f"<td>{format_cell(row['Naissance'], with_none=True)}</td>"
+        
+            details_txt = str(row["Détails"]).replace("\n", " ") if pd.notnull(row["Détails"]) else ""
+            details_txt_safe = html_lib.escape(details_txt.strip(), quote=True)
+        
+            if details_txt_safe:
+                icon = f"""
+                <details class="details-tip">
+                  <summary aria-label="Voir les détails">&#9432;</summary>
+                  <div class="details-box">{details_txt_safe}</div>
+                </details>
+                """
+                perf_html = f"{format_cell(row['Performance'])}{icon}"
+            else:
+                perf_html = format_cell(row["Performance"])
+        
+            table_html += f"<td>{perf_html}</td>"
+            table_html += f"<td>{format_cell(row['Lieu'], with_none=True)}</td>"
+            table_html += f"<td>{format_cell(row['Date'], with_none=True)}</td>"
+            table_html += f"<td>{format_cell(row['Cat.'])}</td>"
+            table_html += f"<td>{format_cell(row['Record'])}</td>"
+            table_html += "</tr>"
+        
+        table_html += "</tbody></table>"
+        
+        # Hauteur approx (à ajuster si besoin)
+        height = min(900, 140 + len(filtre_affichage) * 34)
+        
+        # ---- Rendre TOUT (CSS + tableau + JS) dans la même iframe ----
+        components.html(f"""
         <style>
-        table {
+        table {{
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
@@ -857,37 +902,38 @@ if st.button("Rechercher"):
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        thead {
+        }}
+        thead {{
             background-color: #f8f9fb;
             color: #000000;
-        }
-        @media (prefers-color-scheme: dark) {
-            thead {
-                background-color: #1a1c24 !important;
-                color: #ffffff !important;
-            }
-        }
-        th {
+        }}
+        th {{
             padding: 8px 10px;
             text-align: left;
             font-weight: 600;
             color: #9f9b9a;
-        }
-        td {
+        }}
+        td {{
             padding: 6px 10px;
             border-bottom: 1px solid #ddd;
-        }
+        }}
         
-        /* --- Tooltip: hover desktop + tap mobile via <details>/<summary> --- */
-        .details-tip {
+        @media (prefers-color-scheme: dark) {{
+            thead {{
+                background-color: #1a1c24 !important;
+                color: #ffffff !important;
+            }}
+        }}
+        
+        /* Tooltip hover PC + tap mobile via <details> */
+        .details-tip {{
             display: inline-block;
             position: relative;
             margin-left: 6px;
             vertical-align: middle;
-        }
+        }}
         
-        .details-tip > summary {
+        .details-tip > summary {{
             list-style: none;
             cursor: pointer;
             display: inline-flex;
@@ -900,18 +946,17 @@ if st.button("Rechercher"):
             background: rgba(255,255,255,0.8);
             -webkit-tap-highlight-color: transparent;
             user-select: none;
-        }
-        .details-tip > summary::-webkit-details-marker { display: none; }
+        }}
+        .details-tip > summary::-webkit-details-marker {{ display: none; }}
         
-        @media (prefers-color-scheme: dark) {
-            .details-tip > summary {
+        @media (prefers-color-scheme: dark) {{
+            .details-tip > summary {{
                 border: 1px solid rgba(255,255,255,0.25);
                 background: rgba(0,0,0,0.2);
-            }
-        }
+            }}
+        }}
         
-        /* Bulle */
-        .details-box {
+        .details-box {{
             display: none;
             position: absolute;
             z-index: 9999;
@@ -926,109 +971,56 @@ if st.button("Rechercher"):
             border: 1px solid rgba(0,0,0,0.15);
             box-shadow: 0 10px 30px rgba(0,0,0,0.18);
             white-space: normal;
-        }
-        @media (prefers-color-scheme: dark) {
-            .details-box {
+        }}
+        @media (prefers-color-scheme: dark) {{
+            .details-box {{
                 background: #151823;
                 color: #fff;
                 border: 1px solid rgba(255,255,255,0.18);
-            }
-        }
+            }}
+        }}
         
-        /* Mobile/tactile: ouvert => visible */
-        .details-tip[open] .details-box { display: block; }
+        /* tap/clic => open */
+        .details-tip[open] .details-box {{ display: block; }}
         
-        /* Desktop / appareils avec hover : afficher au survol ET au focus clavier */
-        @media (any-hover: hover) {
-            .details-tip:hover .details-box { 
-                display: block; 
-            }
-        }
+        /* hover PC => affiche sans open */
+        @media (any-hover: hover) {{
+            .details-tip:hover .details-box {{ display: block; }}
+        }}
         
-        /* Bonus accessibilité: si on focus le summary (tab), on affiche aussi */
-        .details-tip:focus-within .details-box {
-            display: block;
-        }
+        /* focus clavier */
+        .details-tip:focus-within .details-box {{ display: block; }}
         </style>
-        """, unsafe_allow_html=True)
         
-        def format_cell(val, with_none=False):
-            if pd.isna(val) or str(val).strip() == "":
-                return '<span style="color: #aaa;">None</span>' if with_none else ""
-            return str(val)
+        {table_html}
         
-        html = "<table><thead><tr>"
-        headers = ["", "Prénom Nom", "Naissance", "Performance", "Lieu", "Date", "Cat.", "Record"]
-        for col in headers:
-            html += f"<th>{col}</th>"
-        html += "</tr></thead><tbody>"
-        
-        for i, (_, row) in enumerate(filtre_affichage.iterrows()):
-            html += "<tr>"
-            html += f"<td>{int(row['rang'])}</td>"
-        
-            html += f"<td>{format_cell(row['Prénom Nom'])}</td>"
-            html += f"<td>{format_cell(row['Naissance'], with_none=True)}</td>"
-        
-            details_txt = str(row["Détails"]).replace("\n", " ") if pd.notnull(row["Détails"]) else ""
-            details_txt_safe = html_lib.escape(details_txt.strip(), quote=True)
-        
-            if details_txt_safe:
-                icon = f"""
-        <details class="details-tip">
-          <summary aria-label="Voir les détails">&#9432;</summary>
-          <div class="details-box">{details_txt_safe}</div>
-        </details>
-        """
-                perf_html = f"{format_cell(row['Performance'])}{icon}"
-            else:
-                perf_html = format_cell(row["Performance"])
-        
-            html += f"<td>{perf_html}</td>"
-        
-            html += f"<td>{format_cell(row['Lieu'], with_none=True)}</td>"
-            html += f"<td>{format_cell(row['Date'], with_none=True)}</td>"
-            html += f"<td>{format_cell(row['Cat.'])}</td>"
-            html += f"<td>{format_cell(row['Record'])}</td>"
-            html += "</tr>"
-        
-        html += "</tbody></table>"
-        st.markdown(html, unsafe_allow_html=True)
-        
-        # JS: uniquement pour mobile/tactile -> un seul ouvert + fermer en tapant ailleurs
-        components.html("""
         <script>
-        (function () {
-          if (window.__cabv_details_tip_init__) return;
-          window.__cabv_details_tip_init__ = true;
-        
-          function closeAll(exceptEl) {
-            document.querySelectorAll('details.details-tip[open]').forEach(d => {
+        (function () {{
+          // Un seul ouvert à la fois + fermer ailleurs (dans CETTE iframe)
+          function closeAll(exceptEl) {{
+            document.querySelectorAll('details.details-tip[open]').forEach(d => {{
               if (!exceptEl || d !== exceptEl) d.removeAttribute('open');
-            });
-          }
+            }});
+          }}
         
-          // Un seul "open" à la fois (tous appareils)
-          document.addEventListener('toggle', function (e) {
+          document.addEventListener('toggle', function (e) {{
             const d = e.target;
             if (!d || !d.matches || !d.matches('details.details-tip')) return;
             if (d.open) closeAll(d);
-          }, true);
+          }}, true);
         
-          // Clic/tap ailleurs => fermer tout
-          document.addEventListener('pointerdown', function (e) {
+          document.addEventListener('pointerdown', function (e) {{
             const inside = e.target.closest && e.target.closest('details.details-tip');
             if (!inside) closeAll(null);
-          }, true);
+          }}, true);
         
-          // ESC => fermer tout
-          document.addEventListener('keydown', function (e) {
+          document.addEventListener('keydown', function (e) {{
             if (e.key === 'Escape') closeAll(null);
-          }, true);
-        })();
+          }}, true);
+        }})();
         </script>
-        """, height=0)
-
+        """, height=height, scrolling=True)
+        
     else:
         df_filtre["record"] = df_filtre["record"].fillna("")
 
@@ -1118,6 +1110,7 @@ if st.button("Rechercher"):
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
         
+
 
 
 
