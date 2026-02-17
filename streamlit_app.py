@@ -867,7 +867,11 @@ if st.button("Rechercher"):
         
         /* éviter que le tooltip soit coupé */
         tbody, tr, td { overflow: visible !important; }
-        td { position: relative; padding: 6px 10px; border-bottom: 1px solid #ddd; }
+        td {
+            position: relative;
+            padding: 6px 10px;
+            border-bottom: 1px solid #ddd;
+        }
         
         thead {
             background-color: #f8f9fb;
@@ -930,17 +934,17 @@ if st.button("Rechercher"):
             outline-offset: 2px;
         }
         
-        /* Bulle */
+        /* ===== Bulle ===== */
         .info-pop {
             display: none;
             position: absolute;
             z-index: 9999;
             top: 110%;
-        
             left: 0;
-            white-space: nowrap;
         
-            /* IMPORTANT: pas de transform/min() (Safari) */
+            box-sizing: border-box;                 /* empêche le débordement */
+            white-space: nowrap;                    /* 1 ligne sur PC */
+            width: max-content;                     /* largeur naturelle */
             max-width: min(420px, calc(100vw - 16px));
         
             padding: 8px 10px;
@@ -950,7 +954,7 @@ if st.button("Rechercher"):
             border: 1px solid rgba(0,0,0,0.15);
             box-shadow: 0 10px 30px rgba(0,0,0,0.18);
         
-            pointer-events: none; /* évite de casser le hover */
+            pointer-events: none;
         }
         
         @media (prefers-color-scheme: dark) {
@@ -961,16 +965,21 @@ if st.button("Rechercher"):
             }
         }
         
-        /* Affichage hover + focus */
-        .info-wrap:hover .info-pop { display: block; pointer-events: auto; }
-        .info-wrap:focus-within .info-pop { display: block; pointer-events: auto; }
+        /* Affichage hover + tap */
+        .info-wrap:hover .info-pop,
+        .info-wrap:focus-within .info-pop {
+            display: block;
+            pointer-events: auto;
+        }
         
-        /* 📱 Mobile : retour à la ligne si nécessaire */
+        /* 📱 Mobile : wrap seulement si nécessaire */
         @media (max-width: 768px) {
             .info-pop {
                 white-space: normal;
-                word-break: break-word;
-                max-width: 90vw;
+                width: max-content;
+                max-width: calc(100vw - 16px);
+                overflow-wrap: break-word;
+                word-break: normal;
             }
         }
         </style>
@@ -1107,6 +1116,7 @@ if st.button("Rechercher"):
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
         
+
 
 
 
