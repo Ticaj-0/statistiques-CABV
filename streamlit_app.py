@@ -957,12 +957,6 @@ if st.button("Rechercher"):
                 border: 1px solid rgba(255,255,255,0.18);
             }
         }
-        /* Si on est trop proche du bord droit, on aligne à droite */
-        .info-wrap:hover .info-pop,
-        .info-wrap:focus-within .info-pop {
-            right: 0;
-            left: auto;
-        }
 
         @media (prefers-color-scheme: dark) {
             .info-pop {
@@ -1121,6 +1115,7 @@ if st.button("Rechercher"):
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
         
+
 
 
 
