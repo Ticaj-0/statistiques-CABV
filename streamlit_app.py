@@ -974,12 +974,13 @@ if st.button("Rechercher"):
         
         /* 📱 Mobile : wrap seulement si nécessaire */
         @media (max-width: 768px) {
-            .info-pop {
-                white-space: normal;          /* autorise le retour */
-                word-break: keep-all;         /* interdit la coupure des mots */
-                overflow-wrap: normal;        /* pas de wrap arbitraire */
-                max-width: calc(100vw - 16px);
-            }
+          .info-pop{
+            white-space: normal;
+            overflow-wrap: normal;
+            word-break: keep-all;
+            hyphens: none;
+            max-width: calc(100vw - 16px);
+          }
         }
         </style>
         """, unsafe_allow_html=True)
@@ -999,6 +1000,14 @@ if st.button("Rechercher"):
         
             details_txt = str(row["Détails"]).replace("\n", " ") if pd.notnull(row["Détails"]) else ""
             details_txt_safe = html_lib.escape(details_txt.strip(), quote=True)
+            details_txt = str(row["Détails"]).replace("\n", " ") if pd.notnull(row["Détails"]) else ""
+            details_txt_safe = html_lib.escape(details_txt.strip(), quote=True)
+            
+            # ✅ autoriser la coupure après "/"
+            details_txt_safe = details_txt_safe.replace("/", "/\u200b")
+            
+            # ✅ empêcher la coupure sur "-"
+            details_txt_safe = details_txt_safe.replace("-", "\u2011")  # hyphen insécable (non-breaking hyphen)
         
             if details_txt_safe:
                 icon = f"""
@@ -1115,6 +1124,7 @@ if st.button("Rechercher"):
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
         
+
 
 
 
