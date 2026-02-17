@@ -864,16 +864,10 @@ if st.button("Rechercher"):
             overflow: visible;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
-        tbody, tr, td {
-            overflow: visible !important;
-        }
-        td { position: relative; } /* ancrage propre des tooltips */
         
-        /* ✅ garder l’effet arrondi sans overflow:hidden */
-        thead th:first-child { border-top-left-radius: 10px; }
-        thead th:last-child  { border-top-right-radius: 10px; }
-        tbody tr:last-child td:first-child { border-bottom-left-radius: 10px; }
-        tbody tr:last-child td:last-child  { border-bottom-right-radius: 10px; }
+        /* éviter que le tooltip soit coupé */
+        tbody, tr, td { overflow: visible !important; }
+        td { position: relative; padding: 6px 10px; border-bottom: 1px solid #ddd; }
         
         thead {
             background-color: #f8f9fb;
@@ -885,16 +879,19 @@ if st.button("Rechercher"):
                 color: #ffffff !important;
             }
         }
+        
         th {
             padding: 8px 10px;
             text-align: left;
             font-weight: 600;
             color: #9f9b9a;
         }
-        td {
-            padding: 6px 10px;
-            border-bottom: 1px solid #ddd;
-        }
+        
+        /* coins arrondis sans overflow hidden */
+        thead th:first-child { border-top-left-radius: 10px; }
+        thead th:last-child  { border-top-right-radius: 10px; }
+        tbody tr:last-child td:first-child { border-bottom-left-radius: 10px; }
+        tbody tr:last-child td:last-child  { border-bottom-right-radius: 10px; }
         
         /* ===== Tooltip compatible desktop + mobile (sans JS) ===== */
         .info-wrap {
@@ -940,14 +937,11 @@ if st.button("Rechercher"):
             z-index: 9999;
             top: 110%;
         
-            /* Position de base */
             left: 0;
-        
-            /* 1 seule ligne */
             white-space: nowrap;
         
-            /* Rester dans l'écran */
-            max-width: calc(100vw - 16px);
+            /* IMPORTANT: pas de transform/min() (Safari) */
+            max-width: min(420px, calc(100vw - 16px));
         
             padding: 8px 10px;
             border-radius: 10px;
@@ -955,24 +949,10 @@ if st.button("Rechercher"):
             color: #111;
             border: 1px solid rgba(0,0,0,0.15);
             box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+        
+            pointer-events: none; /* évite de casser le hover */
         }
-        /* Empêcher de sortir de l'écran à droite : on décale légèrement */
-        .info-wrap:hover .info-pop,
-        .info-wrap:focus-within .info-pop {
-            transform: translateX(
-                min(0px, calc(100vw - 16px - 100%))
-            );
-        }
-
-        /* Mode sombre */
-        @media (prefers-color-scheme: dark) {
-            .info-pop {
-                background: #151823;
-                color: #fff;
-                border: 1px solid rgba(255,255,255,0.18);
-            }
-        }
-
+        
         @media (prefers-color-scheme: dark) {
             .info-pop {
                 background: #151823;
@@ -981,21 +961,11 @@ if st.button("Rechercher"):
             }
         }
         
-        /* Hover (PC) : on l’active sans media query (plus fiable) */
-        .info-wrap:hover .info-pop {
-            display: block;
-        }
+        /* Affichage hover + focus */
+        .info-wrap:hover .info-pop { display: block; pointer-events: auto; }
+        .info-wrap:focus-within .info-pop { display: block; pointer-events: auto; }
         
-        /* Bonus: si la souris est au-dessus du tooltip lui-même, il reste visible */
-        .info-wrap:hover,
-        .info-wrap:hover .info-pop {
-            pointer-events: auto;
-        }
-        
-        /* Mobile + clavier : tap = focus */
-        .info-wrap:focus-within .info-pop {
-            display: block;
-        }
+        /* 📱 Mobile : retour à la ligne si nécessaire */
         @media (max-width: 768px) {
             .info-pop {
                 white-space: normal;
@@ -1005,7 +975,7 @@ if st.button("Rechercher"):
         }
         </style>
         """, unsafe_allow_html=True)
-        
+
         # ---- Construire le tableau HTML (comme avant) ----
         table_html = "<table><thead><tr>"
         headers = ["", "Prénom Nom", "Naissance", "Performance", "Lieu", "Date", "Cat.", "Record"]
@@ -1137,6 +1107,7 @@ if st.button("Rechercher"):
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
         
+
 
 
 
