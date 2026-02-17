@@ -948,11 +948,15 @@ if st.button("Rechercher"):
             }
         }
         
-        /* Desktop souris */
-        @media (any-hover: hover) {
-            .info-wrap:hover .info-pop {
-                display: block;
-            }
+        /* Hover (PC) : on l’active sans media query (plus fiable) */
+        .info-wrap:hover .info-pop {
+            display: block;
+        }
+        
+        /* Bonus: si la souris est au-dessus du tooltip lui-même, il reste visible */
+        .info-wrap:hover,
+        .info-wrap:hover .info-pop {
+            pointer-events: auto;
         }
         
         /* Mobile + clavier : tap = focus */
@@ -1093,6 +1097,7 @@ if st.button("Rechercher"):
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
         
+
 
 
 
