@@ -943,10 +943,10 @@ if st.button("Rechercher"):
             left: 0;
         
             box-sizing: border-box;                 /* empêche le débordement */
-            white-space: nowrap;                    /* 1 ligne sur PC */
-            width: max-content;                     /* largeur naturelle */
-            max-width: min(420px, calc(100vw - 16px));
-        
+            white-space: nowrap;
+            width: fit-content;     /* 👈 box = texte EXACT */
+            max-width: none;        /* 👈 aucune contrainte sur PC */
+            
             padding: 8px 10px;
             border-radius: 10px;
             background: #ffffff;
@@ -1116,6 +1116,7 @@ if st.button("Rechercher"):
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
         
+
 
 
 
