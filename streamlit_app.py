@@ -2,7 +2,6 @@ import os
 import re
 import streamlit as st
 import pandas as pd
-import html as html_lib
 
 ANNEE_SAISON = 2025
 
@@ -14,7 +13,7 @@ logo_placeholder = st.empty()
 with logo_placeholder.container():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.image("LogoCABV.png", width=500)
+        st.image("logo_CABV2.png", width=500)
 
 # ============================================================
 # 0) Fichiers / cache (Parquet direct)
@@ -500,7 +499,7 @@ logo_placeholder.empty()
 # ============================================================
 col_logo, col_title = st.columns([1, 5])
 with col_logo:
-    st.image("LogoCABV.png", width=170)
+    st.image("logo_CABV2.png", width=170)
 
 # ============================================================
 # 5) Interface
@@ -877,82 +876,10 @@ if st.button("Rechercher"):
             padding: 6px 10px;
             border-bottom: 1px solid #ddd;
         }
-        
-        /* --- Tooltip / Popover accessible (mobile + desktop) --- */
-        .info-wrap {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .info-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 22px;
-            height: 22px;
-            border-radius: 999px;
-            border: 1px solid rgba(0,0,0,0.15);
-            background: rgba(255,255,255,0.8);
-            font-size: 14px;
-            line-height: 1;
-            cursor: pointer;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        @media (prefers-color-scheme: dark) {
-            .info-btn {
-                border: 1px solid rgba(255,255,255,0.25);
-                background: rgba(0,0,0,0.2);
-            }
-        }
-        .info-btn:focus {
-            outline: 2px solid rgba(31,119,180,0.6);
-            outline-offset: 2px;
-        }
-        
-        .info-pop {
-            position: absolute;
-            z-index: 9999;
-            top: 110%;
-            left: 0;
-            min-width: 220px;
-            max-width: min(320px, 85vw);
-            padding: 10px 12px;
-            border-radius: 10px;
-            background: #ffffff;
-            color: #111;
-            border: 1px solid rgba(0,0,0,0.15);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.18);
-            display: none;
-            white-space: normal;
-        }
-        @media (prefers-color-scheme: dark) {
-            .info-pop {
-                background: #151823;
-                color: #fff;
-                border: 1px solid rgba(255,255,255,0.18);
-            }
-        }
-        
-        .info-pop.open { display: block; }
-        
-        .info-pop .close {
-            float: right;
-            border: none;
-            background: transparent;
-            cursor: pointer;
-            font-size: 16px;
-            line-height: 1;
-            color: inherit;
-            padding: 0;
-            margin: -2px 0 6px 10px;
-        }
-        
-        @media (hover: hover) and (pointer: fine) {
-            /* bonus desktop: ouverture au survol */
-            .info-wrap:hover .info-pop { display: block; }
+        td span[title] {
+            cursor: help;
+            color: #1f77b4;
+            margin-left: 5px;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -967,36 +894,20 @@ if st.button("Rechercher"):
         for col in headers:
             html += f"<th>{col}</th>"
         html += "</tr></thead><tbody>"
-        
-        for i, (_, row) in enumerate(filtre_affichage.iterrows()):
+
+        for _, row in filtre_affichage.iterrows():
             html += "<tr>"
             html += f"<td>{int(row['rang'])}</td>"
 
             html += f"<td>{format_cell(row['Prénom Nom'])}</td>"
             html += f"<td>{format_cell(row['Naissance'], with_none=True)}</td>"
-            
-            details_txt = str(row["Détails"]) if pd.notnull(row["Détails"]) else ""
-            details_txt = details_txt.replace("\n", " ").strip()
-            details_txt = html_lib.escape(details_txt, quote=True)  # échappe & < > " et '
-            
-            if details_txt:
-                pop_id = f"pop_{i}"  # i depuis enumerate()
-                icon = (
-                    '<span class="info-wrap">'
-                    f'<button class="info-btn" type="button" aria-label="Voir les détails" '
-                    f'aria-expanded="false" aria-controls="{pop_id}">'
-                    '&#9432;'
-                    '</button>'
-                    f'<span id="{pop_id}" class="info-pop" role="tooltip">'
-                    '<button class="close" type="button" aria-label="Fermer">✕</button>'
-                    f'{details_txt}'
-                    '</span>'
-                    '</span>'
-                )
+
+            details_txt = str(row["Détails"]).replace("\n", " ") if pd.notnull(row["Détails"]) else ""
+            if details_txt.strip():
+                icon = f'<span title="{details_txt}">&#9432;</span>'
                 perf_html = f"{format_cell(row['Performance'])}{icon}"
             else:
                 perf_html = format_cell(row["Performance"])
-            
             html += f"<td>{perf_html}</td>"
 
             html += f"<td>{format_cell(row['Lieu'], with_none=True)}</td>"
@@ -1007,61 +918,6 @@ if st.button("Rechercher"):
 
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
-        st.markdown("""
-        <script>
-        (function () {
-          // Eviter de re-attacher plusieurs fois si Streamlit rerender
-          if (window.__cabv_tooltips_init__) return;
-          window.__cabv_tooltips_init__ = true;
-        
-          function closeAll() {
-            document.querySelectorAll('.info-pop.open').forEach(p => p.classList.remove('open'));
-            document.querySelectorAll('.info-btn[aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded', 'false'));
-          }
-        
-          document.addEventListener('click', function (e) {
-            const btn = e.target.closest('.info-btn');
-            const closeBtn = e.target.closest('.info-pop .close');
-        
-            if (closeBtn) {
-              const pop = closeBtn.closest('.info-pop');
-              if (pop) pop.classList.remove('open');
-              const wrap = closeBtn.closest('.info-wrap');
-              const b = wrap ? wrap.querySelector('.info-btn') : null;
-              if (b) b.setAttribute('aria-expanded', 'false');
-              e.preventDefault();
-              e.stopPropagation();
-              return;
-            }
-        
-            if (!btn) {
-              // tap/clic ailleurs => ferme tout
-              closeAll();
-              return;
-            }
-        
-            // toggle du popover associé
-            const wrap = btn.closest('.info-wrap');
-            const pop = wrap ? wrap.querySelector('.info-pop') : null;
-            if (!pop) return;
-        
-            const isOpen = pop.classList.contains('open');
-            closeAll();
-            if (!isOpen) {
-              pop.classList.add('open');
-              btn.setAttribute('aria-expanded', 'true');
-            }
-            e.preventDefault();
-            e.stopPropagation();
-          }, { passive: false });
-        
-          // clavier: ESC ferme
-          document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') closeAll();
-          });
-        })();
-        </script>
-        """, unsafe_allow_html=True)
 
     else:
         df_filtre["record"] = df_filtre["record"].fillna("")
@@ -1151,4 +1007,4 @@ if st.button("Rechercher"):
 
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
-
+        
