@@ -996,6 +996,13 @@ if st.button("Rechercher"):
         .info-wrap:focus-within .info-pop {
             display: block;
         }
+        @media (max-width: 768px) {
+            .info-pop {
+                white-space: normal;
+                word-break: break-word;
+                max-width: 90vw;
+            }
+        }
         </style>
         """, unsafe_allow_html=True)
         
@@ -1130,6 +1137,7 @@ if st.button("Rechercher"):
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
         
+
 
 
 
