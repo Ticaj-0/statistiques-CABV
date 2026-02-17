@@ -2,6 +2,7 @@ import os
 import re
 import streamlit as st
 import pandas as pd
+import html as html_lib
 
 ANNEE_SAISON = 2025
 
@@ -876,10 +877,69 @@ if st.button("Rechercher"):
             padding: 6px 10px;
             border-bottom: 1px solid #ddd;
         }
-        td span[title] {
-            cursor: help;
-            color: #1f77b4;
-            margin-left: 5px;
+
+        /* --- Tooltip cliquable (mobile) via <details>/<summary> --- */
+        .details-tip {
+            display: inline-block;
+            position: relative;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+        
+        .details-tip > summary {
+            list-style: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 999px;
+            border: 1px solid rgba(0,0,0,0.15);
+            background: rgba(255,255,255,0.8);
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        
+        .details-tip > summary::-webkit-details-marker {
+            display: none;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            .details-tip > summary {
+                border: 1px solid rgba(255,255,255,0.25);
+                background: rgba(0,0,0,0.2);
+            }
+        }
+        
+        /* La bulle */
+        .details-tip[open] .details-box {
+            display: block;
+        }
+        
+        .details-box {
+            display: none;
+            position: absolute;
+            z-index: 9999;
+            top: 110%;
+            left: 0;
+            min-width: 220px;
+            max-width: min(320px, 85vw);
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #111;
+            border: 1px solid rgba(0,0,0,0.15);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+            white-space: normal;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            .details-box {
+                background: #151823;
+                color: #fff;
+                border: 1px solid rgba(255,255,255,0.18);
+            }
         }
         </style>
         """, unsafe_allow_html=True)
@@ -901,13 +961,22 @@ if st.button("Rechercher"):
 
             html += f"<td>{format_cell(row['Prénom Nom'])}</td>"
             html += f"<td>{format_cell(row['Naissance'], with_none=True)}</td>"
-
+            
             details_txt = str(row["Détails"]).replace("\n", " ") if pd.notnull(row["Détails"]) else ""
-            if details_txt.strip():
-                icon = f'<span title="{details_txt}">&#9432;</span>'
+            details_txt = details_txt.strip()
+            details_txt_safe = html_lib.escape(details_txt, quote=True)
+            
+            if details_txt_safe:
+                icon = f"""
+                <details class="details-tip">
+                    <summary aria-label="Voir les détails">&#9432;</summary>
+                    <div class="details-box">{details_txt_safe}</div>
+                </details>
+                """
                 perf_html = f"{format_cell(row['Performance'])}{icon}"
             else:
                 perf_html = format_cell(row["Performance"])
+            
             html += f"<td>{perf_html}</td>"
 
             html += f"<td>{format_cell(row['Lieu'], with_none=True)}</td>"
@@ -1008,3 +1077,4 @@ if st.button("Rechercher"):
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
         
+
