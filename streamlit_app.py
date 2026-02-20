@@ -789,12 +789,6 @@ if st.button("Rechercher"):
         df_filtre = df_filtre.sort_values("performance", ascending=False).reset_index(drop=True)
         df_filtre["rang"] = df_filtre["performance"].rank(method="min", ascending=False).astype(int)
     else:
-        st.write(
-            df_filtre[
-                df_filtre["performance_classement"].isna()
-            ][["nom", "performance_brute", "discipline"]]
-        )
-
         df_filtre = df_filtre.sort_values("performance_classement", ascending=True).reset_index(drop=True)
         df_filtre["rang"] = df_filtre["performance_classement"].rank(method="min", ascending=True).astype(int)
 
@@ -1151,6 +1145,7 @@ if st.button("Rechercher"):
 
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
+
 
 
 
