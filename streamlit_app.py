@@ -812,7 +812,10 @@ if st.button("Rechercher"):
     # HTML (comme avant)
     # ==========================
     elif discipline in disciplines_multiples or discipline in relais:
-        colonnes = ["rang", "nom", "naissance", "performance_affichee", "lieu", "date", "categorie_affichee", "record", "multiple"]
+        colonnes = [
+            "rang", "nom", "naissance", "performance_affichee", "lieu", "date",
+            "categorie_affichee", "record", "multiple", "annee_competition"
+        ]
         filtre_affichage = df_filtre[colonnes].rename(columns={
             "nom": "Prénom Nom",
             "naissance": "Naissance",
@@ -821,7 +824,8 @@ if st.button("Rechercher"):
             "date": "Date",
             "categorie_affichee": "Cat.",
             "record": "Record",
-            "multiple": "Détails"
+            "multiple": "Détails",
+            "annee_competition": "Année"
         })
 
         details_disciplines_multiples = {
@@ -988,6 +992,19 @@ if st.button("Rechercher"):
             hyphens: none;
           }
         }
+        /* Mise en évidence saison actuelle (comme les autres disciplines) */
+        .saison-verte td {
+            color: #9f9b9a;
+            font-weight: 700;
+            background-color: #f8f9fb;
+        }
+        @media (prefers-color-scheme: dark) {
+            .saison-verte td {
+                color: #ffffff;
+                font-weight: 700;
+                background-color: #1b1d26;
+            }
+        }
         </style>
         """, unsafe_allow_html=True)
 
@@ -999,13 +1016,12 @@ if st.button("Rechercher"):
         table_html += "</tr></thead><tbody>"
         
         for i, (_, row) in enumerate(filtre_affichage.iterrows()):
-            table_html += "<tr>"
+            classe_tr = "saison-verte" if row.get("Année") == ANNEE_SAISON else ""
+            table_html += f'<tr class="{classe_tr}">'
             table_html += f"<td>{int(row['rang'])}</td>"
             table_html += f"<td>{format_cell(row['Prénom Nom'])}</td>"
             table_html += f"<td>{format_cell(row['Naissance'], with_none=True)}</td>"
         
-            details_txt = str(row["Détails"]).replace("\n", " ") if pd.notnull(row["Détails"]) else ""
-            details_txt_safe = html_lib.escape(details_txt.strip(), quote=True)
             details_txt = str(row["Détails"]).replace("\n", " ") if pd.notnull(row["Détails"]) else ""
             details_txt_safe = html_lib.escape(details_txt.strip(), quote=True)
             
@@ -1129,21 +1145,6 @@ if st.button("Rechercher"):
 
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
