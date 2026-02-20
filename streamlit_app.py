@@ -396,20 +396,51 @@ def appliquer_records_outdoor_fast(df: pd.DataFrame, df_records_lookup: pd.DataF
     df.loc[sub["_idx"], "record"] = sub["record"].values
     return df
 
-
 @st.cache_data(show_spinner=False)
 def charger_limites_lookup(path_parquet: str, mtime: float) -> dict:
     df_limites = read_parquet_cached(path_parquet, mtime).copy()
+
+    # Nettoyage de base
     df_limites["Saison"] = df_limites["Saison"].astype(str).str.strip().str.lower()
     df_limites["Discipline"] = df_limites["Discipline"].astype(str).str.strip()
     df_limites["Categorie"] = df_limites["Categorie"].astype(str).str.strip()
     df_limites["Sexe"] = df_limites["Sexe"].astype(str).str.strip()
 
+    # Normalisations robustes
+    def norm_saison(s: str) -> str:
+        s = str(s).strip().lower()
+        # tolère quelques variantes fréquentes
+        if s in {"out", "outdoor", "plein air", "pleinair", "extérieur", "exterieur"}:
+            return "outdoor"
+        if s in {"in", "indoor", "salle", "hall", "intérieur", "interieur"}:
+            return "indoor"
+        return s
+
+    def norm_sexe(x: str) -> str:
+        s = str(x).strip().lower()
+        # tolère H/F, M/W, homme/femme
+        if s in {"h", "m", "homme", "men"}:
+            return "homme"
+        if s in {"f", "w", "femme", "women"}:
+            return "femme"
+        return s
+
+    def norm_categorie(c: str) -> str:
+        s = str(c).strip()
+        # uniformise quelques écritures possibles
+        s = s.replace("U ", "U").replace("u ", "u").strip()
+        return s
+
     lookup = {}
     for _, r in df_limites.iterrows():
-        lookup[(r["Discipline"], r["Categorie"], r["Sexe"], r["Saison"])] = r.get("Limite", None)
-    return lookup
+        disc_norm = normaliser_discipline(r["Discipline"])  # <- ta fonction existante
+        cat_norm = norm_categorie(r["Categorie"])
+        sexe_norm = norm_sexe(r["Sexe"])
+        saison_norm = norm_saison(r["Saison"])
 
+        lookup[(disc_norm, cat_norm, sexe_norm, saison_norm)] = r.get("Limite", None)
+
+    return lookup
 
 @st.cache_data(show_spinner=False)
 def charger_doublons_valides_set(path_parquet: str, mtime: float) -> set:
@@ -687,9 +718,9 @@ if st.button("Rechercher"):
     HIERARCHIE_LIMITES = ["U10", "U12", "U14", "U16", "U18", "U20", "Adulte"]
 
     def get_limite(discipline_, categorie_, genre_, saison_):
-        discipline_ = str(discipline_).strip()
+        discipline_ = normaliser_discipline(discipline_)
         categorie_ = str(categorie_).strip()
-        genre_ = str(genre_).strip()
+        genre_ = str(genre_).strip().lower()
         saison_norm = str(saison_).strip().lower()
 
         cats_a_tester = [categorie_]
@@ -1145,6 +1176,7 @@ if st.button("Rechercher"):
 
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
+
 
 
 
