@@ -396,58 +396,20 @@ def appliquer_records_outdoor_fast(df: pd.DataFrame, df_records_lookup: pd.DataF
     df.loc[sub["_idx"], "record"] = sub["record"].values
     return df
 
+
 @st.cache_data(show_spinner=False)
 def charger_limites_lookup(path_parquet: str, mtime: float) -> dict:
     df_limites = read_parquet_cached(path_parquet, mtime).copy()
-
-    # Nettoyage base
-    df_limites["Saison"] = df_limites["Saison"].astype(str).str.strip()
+    df_limites["Saison"] = df_limites["Saison"].astype(str).str.strip().str.lower()
     df_limites["Discipline"] = df_limites["Discipline"].astype(str).str.strip()
     df_limites["Categorie"] = df_limites["Categorie"].astype(str).str.strip()
     df_limites["Sexe"] = df_limites["Sexe"].astype(str).str.strip()
 
-    def norm_saison(s: str) -> str:
-        s = str(s).strip().lower()
-        if s in {"out", "outdoor", "plein air", "pleinair", "extérieur", "exterieur"}:
-            return "outdoor"
-        if s in {"in", "indoor", "salle", "hall", "intérieur", "interieur"}:
-            return "indoor"
-        return s
-
-    def norm_sexe(x: str) -> str:
-        s = str(x).strip().lower()
-        if s in {"h", "m", "homme", "men"}:
-            return "homme"
-        if s in {"f", "w", "femme", "women"}:
-            return "femme"
-        return s
-
-    def norm_categorie(c: str) -> str:
-        # on normalise en lower pour éviter Adulte/adulte etc.
-        return str(c).strip().lower()
-
     lookup = {}
-
     for _, r in df_limites.iterrows():
-        discipline_raw = r["Discipline"]
-        categorie_raw = r["Categorie"]
-        sexe_raw = r["Sexe"]
-        saison_raw = r["Saison"]
-
-        limite = r.get("Limite", None)
-
-        # 1) clé BRUTE (comme avant, pour ne rien casser)
-        lookup[(discipline_raw, categorie_raw, sexe_raw, saison_raw.strip().lower())] = limite
-
-        # 2) clé NORMALISÉE (robuste)
-        disc_norm = normaliser_discipline(discipline_raw)
-        cat_norm = norm_categorie(categorie_raw)
-        sexe_norm = norm_sexe(sexe_raw)
-        saison_norm = norm_saison(saison_raw)
-
-        lookup[(disc_norm, cat_norm, sexe_norm, saison_norm)] = limite
-
+        lookup[(r["Discipline"], r["Categorie"], r["Sexe"], r["Saison"])] = r.get("Limite", None)
     return lookup
+
 
 @st.cache_data(show_spinner=False)
 def charger_doublons_valides_set(path_parquet: str, mtime: float) -> set:
@@ -725,34 +687,20 @@ if st.button("Rechercher"):
     HIERARCHIE_LIMITES = ["U10", "U12", "U14", "U16", "U18", "U20", "Adulte"]
 
     def get_limite(discipline_, categorie_, genre_, saison_):
-        discipline_raw = str(discipline_).strip()
-        categorie_raw = str(categorie_).strip()
-        genre_raw = str(genre_).strip()
-        saison_raw = str(saison_).strip().lower()
-    
-        # normalisés (doivent matcher ceux du loader)
-        discipline_ = normaliser_discipline(discipline_raw)
-        categorie_ = str(categorie_raw).strip().lower()
-        genre_ = str(genre_raw).strip().lower()
-        saison_norm = saison_raw  # "outdoor"/"indoor" chez toi c’est déjà OK
+        discipline_ = str(discipline_).strip()
+        categorie_ = str(categorie_).strip()
+        genre_ = str(genre_).strip()
+        saison_norm = str(saison_).strip().lower()
 
         cats_a_tester = [categorie_]
-        if categorie_raw in HIERARCHIE_LIMITES:
-            # HIERARCHIE_LIMITES est en "U20", etc. → on convertit en lower
-            idx = HIERARCHIE_LIMITES.index(categorie_raw)
-            cats_a_tester += [c.lower() for c in HIERARCHIE_LIMITES[idx + 1 :]]
-    
+        if categorie_ in HIERARCHIE_LIMITES:
+            idx = HIERARCHIE_LIMITES.index(categorie_)
+            cats_a_tester += HIERARCHIE_LIMITES[idx + 1 :]
+
         for cat_test in cats_a_tester:
-            # 1) brute
-            key_raw = (discipline_raw, cat_test.upper() if cat_test.startswith("u") else cat_test.capitalize(), genre_raw, saison_norm)
-            if key_raw in limites_lookup:
-                return limites_lookup[key_raw], cat_test
-    
-            # 2) normalisée
-            key_norm = (discipline_, cat_test, genre_, saison_norm)
-            if key_norm in limites_lookup:
-                return limites_lookup[key_norm], cat_test
-    
+            key = (discipline_, cat_test, genre_, saison_norm)
+            if key in limites_lookup:
+                return limites_lookup[key], cat_test
         return None, None
 
     categorie_sel_clean = categorie_selection.split()[0] if " " in categorie_selection else categorie_selection
@@ -1197,9 +1145,3 @@ if st.button("Rechercher"):
 
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
-
-
-
-
-
-
