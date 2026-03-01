@@ -259,7 +259,8 @@ def charger_et_preparer_donnees(path_parquet: str, mtime: float) -> pd.DataFrame
         "discipline", "performance", "nom", "nationalite", "naissance", "lieu",
         "date", "categorie_fichier", "sexe", "record", "multiple", "salle"
     ]
-
+     # garder ce qui vient du statistiques.parquet
+    df["record"] = df["record"].fillna("").astype(str).str.strip()
     df["sexe"] = df["sexe"].replace({"H": "Homme", "F": "Femme"})
     df["performance_brute"] = df["performance"]
 
@@ -341,15 +342,14 @@ def charger_records_lookup(path_parquet: str, mtime: float) -> pd.DataFrame:
 
     return df_records[["discipline_norm", "cat_norm", "perf_key", "Rang", "Groupe"]].copy()
 
-
 def appliquer_records_outdoor_fast(df: pd.DataFrame, df_records_lookup: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
+    # ✅ garder les records déjà présents dans statistiques.parquet
+    df["record"] = df["record"].fillna("").astype(str).str.strip()
+
     salle_norm = df["salle"].astype(str).str.strip().str.lower()
     mask_out = salle_norm.eq("outdoor")
-
-    df["record"] = df["record"].fillna("")
-    df.loc[~mask_out, "record"] = ""
 
     if mask_out.sum() == 0 or df_records_lookup.empty:
         return df
@@ -373,7 +373,6 @@ def appliquer_records_outdoor_fast(df: pd.DataFrame, df_records_lookup: pd.DataF
     ).dropna(subset=["Rang", "Groupe"])
 
     if merged.empty:
-        df.loc[mask_out, "record"] = ""
         return df
 
     merged = merged.sort_values(["_idx", "prio"]).drop_duplicates(subset=["_idx"], keep="first")
@@ -391,11 +390,29 @@ def appliquer_records_outdoor_fast(df: pd.DataFrame, df_records_lookup: pd.DataF
     merged.loc[mask_add_cat_record, "record_txt"] = "Record VS " + groupe[mask_add_cat_record]
 
     sub = sub.merge(merged[["_idx", "record_txt"]], on="_idx", how="left")
-    sub["record"] = sub["record_txt"].fillna("")
+    sub["record_txt"] = sub["record_txt"].fillna("").astype(str).str.strip()
+
+    # ✅ concaténer record existant + record_txt (si record_txt existe)
+    base = sub["record"].fillna("").astype(str).str.strip()
+    add = sub["record_txt"]
+
+    # si add est vide -> base
+    out = base.copy()
+
+    # si base vide -> add
+    mask_base_vide = base.eq("") & add.ne("")
+    out.loc[mask_base_vide] = add.loc[mask_base_vide]
+
+    # si les deux existent -> concat, sauf si add déjà contenu
+    mask_both = base.ne("") & add.ne("")
+    mask_deja = mask_both & base.str.contains(add, regex=False)
+    mask_concat = mask_both & (~mask_deja)
+    out.loc[mask_concat] = base.loc[mask_concat] + " / " + add.loc[mask_concat]
+
+    sub["record"] = out
 
     df.loc[sub["_idx"], "record"] = sub["record"].values
     return df
-
 
 @st.cache_data(show_spinner=False)
 def charger_limites_lookup(path_parquet: str, mtime: float) -> dict:
@@ -1145,6 +1162,7 @@ if st.button("Rechercher"):
 
         html += "</tbody></table>"
         st.markdown(html, unsafe_allow_html=True)
+
 
 
 
