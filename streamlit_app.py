@@ -405,7 +405,7 @@ def appliquer_records_outdoor_fast(df: pd.DataFrame, df_records_lookup: pd.DataF
 
     # si les deux existent -> concat, sauf si add déjà contenu
     mask_both = base.ne("") & add.ne("")
-    mask_deja = mask_both & base.str.contains(add, regex=False)
+    mask_deja = mask_both & ((base != "") & (add != "") & [a in b for a, b in zip(add, base)])
     mask_concat = mask_both & (~mask_deja)
     out.loc[mask_concat] = base.loc[mask_concat] + " / " + add.loc[mask_concat]
 
