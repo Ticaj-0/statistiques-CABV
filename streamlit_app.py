@@ -394,19 +394,21 @@ def appliquer_records_outdoor_fast(df: pd.DataFrame, df_records_lookup: pd.DataF
 
     # ✅ concaténer record existant + record_txt (si record_txt existe)
     base = sub["record"].fillna("").astype(str).str.strip()
-    add = sub["record_txt"]
-
-    # si add est vide -> base
+    add = sub["record_txt"].fillna("").astype(str).str.strip()
+    
     out = base.copy()
-
-    # si base vide -> add
+    
     mask_base_vide = base.eq("") & add.ne("")
     out.loc[mask_base_vide] = add.loc[mask_base_vide]
-
-    # si les deux existent -> concat, sauf si add déjà contenu
+    
     mask_both = base.ne("") & add.ne("")
-    mask_deja = mask_both & ((base != "") & (add != "") & [a in b for a, b in zip(add, base)])
-    mask_concat = mask_both & (~mask_deja)
+    
+    mask_contains = pd.Series(
+        [a in b for a, b in zip(add, base)],
+        index=base.index
+    )
+    
+    mask_concat = mask_both & (~mask_contains)
     out.loc[mask_concat] = base.loc[mask_concat] + " / " + add.loc[mask_concat]
 
     sub["record"] = out
